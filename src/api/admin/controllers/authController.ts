@@ -5,9 +5,10 @@ import jwt from "jsonwebtoken";
 
 export const adminLogin = async (req: Request, res: Response) => {
   try {
+    console.log("adminLogin");
+    
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ email });
-
+    const admin = await Admin.findOne({ email })
     if (!admin) {
       return res.status(401).json({ message: "Invalid admin credentials" });
     }
@@ -16,13 +17,13 @@ export const adminLogin = async (req: Request, res: Response) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid admin credentials" });
     }
+    
 
     const token = jwt.sign(
       { adminId: admin._id },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "1h" }
     );
-
     res.json({ token });
   } catch (error) {
     res.status(500).json({ message: "Server error" });

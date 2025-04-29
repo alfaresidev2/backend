@@ -39,3 +39,7 @@ coverage/
 *.pid
 *.seed
 *.pid.lock 
+
+# MCP
+.cursor/mcp.json
+.qodo
