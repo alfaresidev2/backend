@@ -44,7 +44,7 @@ export const getAllCategories = async (req: Request, res: Response, next: NextFu
       query.name = { $regex: search, $options: "i" };
     }
 
-    const categories = await Category.find(query).sort({ order: 1, name: 1 }).populate("parentCategory", "name");
+    const categories = await Category.find(query).sort({ order: 1, name: 1 });
 
     res.status(200).json({
       success: true,
@@ -61,7 +61,7 @@ export const getCategoryById = async (req: Request, res: Response, next: NextFun
   try {
     const categoryId = req.params.id;
 
-    const category = await Category.findById(categoryId).populate("parentCategory", "name");
+    const category = await Category.findById(categoryId);
 
     if (!category) {
       return res.status(404).json({

@@ -16,10 +16,10 @@ const InfluencerSchema = new Schema(
     },
     updates: {
       welcomeMailWithPasswordSent: { type: Boolean, default: false },
+      welcomeMailWithPasswordSentAt: { type: Date },
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: 6,
     },
     phone: {
@@ -68,6 +68,8 @@ const InfluencerSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    images: [{ type: String }],
+    videos: [{ type: String }],
   },
   {
     timestamps: true,

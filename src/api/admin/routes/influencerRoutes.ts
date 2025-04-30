@@ -5,8 +5,8 @@ import {
   createInfluencer,
   updateInfluencer,
   deleteInfluencer,
-  verifyInfluencer,
   searchInfluencers,
+  sendCredentialEmail,
 } from "../controllers/influencerController";
 import { authenticate } from "../middlewares/auth";
 
@@ -33,7 +33,7 @@ influencerRoutes.put("/:id", updateInfluencer);
 // Delete an influencer
 influencerRoutes.delete("/:id", deleteInfluencer);
 
-// Verify an influencer
-influencerRoutes.patch("/:id/verify", verifyInfluencer);
+// Send email with credentials
+influencerRoutes.post("/:id/send-credentials", sendCredentialEmail);
 
 export default influencerRoutes;
