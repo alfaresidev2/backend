@@ -22,7 +22,7 @@ const InfluencerSchema = new Schema(
       type: String,
       minlength: 6,
     },
-    phone: {
+    phoneNumber: {
       type: String,
       trim: true,
     },
@@ -30,16 +30,13 @@ const InfluencerSchema = new Schema(
       {
         platform: {
           type: String,
-          required: [true, "Platform name is required"],
           enum: ["Instagram", "YouTube", "TikTok", "Twitter", "Facebook", "LinkedIn", "Other"],
         },
         handle: {
           type: String,
-          required: [true, "Social media handle is required"],
         },
         followers: {
           type: Number,
-          required: [true, "Number of followers is required"],
         },
         url: {
           type: String,
@@ -52,6 +49,7 @@ const InfluencerSchema = new Schema(
         ref: "Category",
       },
     ],
+    tags: [String],
     bio: {
       type: String,
     },
