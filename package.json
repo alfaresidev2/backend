@@ -1,5 +1,5 @@
 {
-  "name": "influancer_backend",
+  "name": "influencer_backend",
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
@@ -14,6 +14,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.799.0",
+    "@aws-sdk/s3-request-presigner": "^3.799.0",
     "@modelcontextprotocol/server-github": "^2025.4.8",
     "@types/nodemailer": "^6.4.17",
     "bcryptjs": "^3.0.2",

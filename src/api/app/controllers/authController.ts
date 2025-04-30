@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { User, IUser } from "../../../models/User";
+import { User } from "../../../models/User";
 import { sendOtp } from "../../../utils/otpService";
 import { verifyGoogleToken } from "../../../utils/googleAuth";
+import bcrypt from "bcryptjs";
 
 // Helper function to generate OTP
 const generateOTP = (): string => {
@@ -11,11 +12,7 @@ const generateOTP = (): string => {
 
 // Helper function to generate JWT
 const generateToken = (user: any): string => {
-  return jwt.sign(
-    { userId: user._id, role: user.role },
-    process.env.JWT_SECRET || "default_secret",
-    { expiresIn: "7d" }
-  );
+  return jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "", { expiresIn: "365d" });
 };
 
 // Google login/signup
@@ -100,13 +97,7 @@ export const googleAuth = async (req: Request, res: Response) => {
 // Register a new user
 export const register = async (req: Request, res: Response) => {
   try {
-    const {
-      email,
-      phoneNumber,
-      password,
-      commercialRegistrationID,
-      accountType,
-    } = req.body;
+    const { email, phoneNumber, password, commercialRegistrationID, accountType } = req.body;
 
     // Validate required fields
     if (!password || (!email && !phoneNumber)) {
@@ -117,9 +108,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // Check if user already exists
-    const existingUser = email
-      ? await User.findOne({ email })
-      : await User.findOne({ phoneNumber });
+    const existingUser = email ? await User.findOne({ email }) : await User.findOne({ phoneNumber });
 
     if (existingUser) {
       return res.status(400).json({
@@ -255,71 +244,133 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Find user by email or phone
-    const user = email
-      ? await User.findOne({ email })
-      : await User.findOne({ phoneNumber });
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
-
-    // Check if the user is verified
-    if (!user.isVerified) {
-      // Generate new verification code
-      const verificationCode = generateOTP();
-      const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-      user.verificationCode = verificationCode;
-      user.verificationCodeExpires = verificationCodeExpires;
-      await user.save();
-
-      // Send OTP via email or SMS
-      const sendResult = await sendOtp(
-        { email: user.email, phoneNumber: user.phoneNumber },
-        verificationCode
-      );
-
-      return res.status(403).json({
-        success: false,
-        message: `Account not verified. A verification code has been sent to your ${sendResult.method}.`,
-        data: {
-          userId: user._id,
-          requiresVerification: true,
-          // Only include verification code in development environment
-          ...(process.env.NODE_ENV === "development" && { verificationCode }),
-        },
-      });
-    }
-
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
-
-    // Generate token
-    const token = generateToken(user);
-
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          role: user.role,
+    const dbResponse = await User.aggregate([
+      { $facet: { users: [{ $match: { email, phoneNumber } }] } },
+      {
+        $lookup: {
+          from: "influencers",
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [{ $eq: ["$email", email] }, { $eq: ["$phoneNumber", phoneNumber] }],
+                },
+              },
+            },
+          ],
+          as: "influencers",
         },
       },
-    });
+      {
+        $project: {
+          user: { $arrayElemAt: ["$users", 0] },
+          influencer: { $arrayElemAt: ["$influencers", 0] },
+        },
+      },
+    ]);
+
+    const userData = dbResponse?.[0];
+
+    if (!userData?.user && !userData?.influencer) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    if (userData?.user) {
+      // // Check if the user is verified
+      if (!userData?.user.isVerified) {
+        // Generate new verification code
+        const verificationCode = generateOTP();
+        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+        await User.updateOne(
+          { _id: userData?.user?._id },
+          {
+            $set: {
+              verificationCode: verificationCode,
+              verificationCodeExpires: verificationCodeExpires,
+            },
+          }
+        );
+
+        // Send OTP via email or SMS
+        const sendResult = await sendOtp(
+          { email: userData?.user.email, phoneNumber: userData?.user.phoneNumber },
+          verificationCode
+        );
+
+        return res.status(403).json({
+          success: false,
+          message: `Account not verified. A verification code has been sent to your ${sendResult.method}.`,
+          data: {
+            userId: userData?.user?._id,
+            requiresVerification: true,
+            // Only include verification code in development environment
+            ...(process.env.NODE_ENV === "development" && { verificationCode }),
+          },
+        });
+      }
+
+      // // Check password
+      const isMatch = await bcrypt.compare(password, userData?.user?.password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
+
+      delete userData?.user?.password;
+
+      // // Generate token
+      const token = generateToken(userData?.user);
+
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: {
+          token,
+          user: {
+            id: userData?.user._id,
+            email: userData?.user.email,
+            phoneNumber: userData?.user.phoneNumber,
+            role: userData?.user.role,
+          },
+          influencer: null,
+        },
+      });
+    }
+
+    if (userData?.influencer) {
+      // // Check password
+
+      const isMatch = await bcrypt.compare(password, userData?.influencer?.password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
+
+      // // Generate token
+      const token = generateToken(userData?.influencer);
+
+      delete userData?.influencer?.password;
+
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: {
+          token,
+          user: null,
+          influencer: {
+            ...userData?.influencer,
+          },
+        },
+      });
+    }
   } catch (error: any) {
     return res.status(500).json({
       success: false,
@@ -342,9 +393,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = email
-      ? await User.findOne({ email })
-      : await User.findOne({ phoneNumber });
+    const user = email ? await User.findOne({ email }) : await User.findOne({ phoneNumber });
 
     if (!user) {
       return res.status(404).json({
@@ -362,10 +411,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     await user.save();
 
     // Send OTP via email or SMS
-    const sendResult = await sendOtp(
-      { email: user.email, phoneNumber: user.phoneNumber },
-      verificationCode
-    );
+    const sendResult = await sendOtp({ email: user.email, phoneNumber: user.phoneNumber }, verificationCode);
 
     return res.status(200).json({
       success: true,
