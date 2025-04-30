@@ -136,16 +136,11 @@ export const register = async (req: Request, res: Response) => {
     await user.save();
 
     // Send OTP via email or SMS based on provided contact info
-    const sendResult = await sendOtp({ email, phoneNumber }, verificationCode);
-
-    if (!sendResult.success) {
-      // If OTP sending fails, still proceed but notify in the response
-      console.error(`Failed to send OTP to ${email || phoneNumber}`);
-    }
+    await sendOtp({ email, phoneNumber }, verificationCode);
 
     return res.status(201).json({
       success: true,
-      message: `Registration successful. Verification code sent to your ${sendResult.method}. Please verify your account.`,
+      message: `Registration successful. Verification code sent to your phone number or email.`,
       data: {
         userId: user._id,
         // Only include verification code in development environment
@@ -296,14 +291,11 @@ export const login = async (req: Request, res: Response) => {
         );
 
         // Send OTP via email or SMS
-        const sendResult = await sendOtp(
-          { email: userData?.user.email, phoneNumber: userData?.user.phoneNumber },
-          verificationCode
-        );
+        await sendOtp({ email: userData?.user.email, phoneNumber: userData?.user.phoneNumber }, verificationCode);
 
         return res.status(403).json({
           success: false,
-          message: `Account not verified. A verification code has been sent to your ${sendResult.method}.`,
+          message: `Account not verified. A verification code has been sent to your phone number or email.`,
           data: {
             userId: userData?.user?._id,
             requiresVerification: true,
@@ -411,11 +403,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
     await user.save();
 
     // Send OTP via email or SMS
-    const sendResult = await sendOtp({ email: user.email, phoneNumber: user.phoneNumber }, verificationCode);
+    await sendOtp({ email: user.email, phoneNumber: user.phoneNumber }, verificationCode);
 
     return res.status(200).json({
       success: true,
-      message: `Password reset OTP sent to your ${sendResult.method}`,
+      message: `Password reset OTP send, check your phone number or email`,
       data: {
         userId: user._id,
         // Only include verification code in development environment

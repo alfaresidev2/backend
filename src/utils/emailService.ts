@@ -125,7 +125,7 @@ export const sendCredentialsEmail = async (email: string, password: string) => {
         </div>
         <p><strong>Important:</strong> Please log in and change your password immediately for security reasons.</p>
         <div style="margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || "https://yourapp.com"}/login" 
+          <a href="#" 
              style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px;">
             Log In Now
           </a>

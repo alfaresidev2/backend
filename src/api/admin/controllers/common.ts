@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateUploadUrl } from "../../../utils/aws";
+import { generateUploadUrl } from "../../../utils/awsService";
 
 export const getFileUploadSignedUrl = async (req: Request, res: Response) => {
   try {
