@@ -230,9 +230,9 @@ export const verifyOTP = async (req: Request, res: Response) => {
 // Login
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, phoneNumber, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!password || (!email && !phoneNumber)) {
+    if (!password || !username) {
       return res.status(400).json({
         success: false,
         message: "Email/Phone number and password are required",
@@ -240,7 +240,19 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const dbResponse = await User.aggregate([
-      { $facet: { users: [{ $match: { email, phoneNumber } }] } },
+      {
+        $facet: {
+          users: [
+            {
+              $match: {
+                $expr: {
+                  $or: [{ $eq: ["$email", username] }, { $eq: ["$phoneNumber", username] }],
+                },
+              },
+            },
+          ],
+        },
+      },
       {
         $lookup: {
           from: "influencers",
@@ -248,7 +260,7 @@ export const login = async (req: Request, res: Response) => {
             {
               $match: {
                 $expr: {
-                  $or: [{ $eq: ["$email", email] }, { $eq: ["$phoneNumber", phoneNumber] }],
+                  $or: [{ $eq: ["$email", username] }, { $eq: ["$phoneNumber", username] }],
                 },
               },
             },

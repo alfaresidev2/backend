@@ -40,7 +40,23 @@ export const createInfluencer = async (req: Request, res: Response) => {
 // Update an influencer
 export const updateInfluencer = async (req: Request, res: Response) => {
   try {
-    const updatedInfluencer = await Influencer.findByIdAndUpdate(req.params.id, req.body, {
+    const dataToUpdate = { ...req.body };
+
+    delete dataToUpdate?.password;
+    delete dataToUpdate?._id;
+
+    const userData = await Influencer.findById(dataToUpdate?._id);
+
+    if (!userData) return res.status(404).json({ message: "User not found" });
+
+    if (dataToUpdate?.email && userData?.email != dataToUpdate?.email) {
+      dataToUpdate.updates = {
+        ...userData?.updates,
+        welcomeMailWithPasswordSent: false,
+      };
+    }
+
+    const updatedInfluencer = await Influencer.findByIdAndUpdate(req.params.id, dataToUpdate, {
       new: true,
       runValidators: true,
       projection: { password: 0 },
