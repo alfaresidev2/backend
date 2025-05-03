@@ -1,0 +1,30 @@
+name: Dev deployment - AWS
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v3
+
+      - name: Build files
+        run: npm i && npm run build
+
+      - name: Generate SSH key
+        run: |
+          echo "${{ secrets.PRIVATE_KEY }}" > ~/secret.pem
+          chmod 600 ~/secret.pem
+
+      - name: Copy build files
+        run: |
+          scp -o StrictHostKeyChecking=accept-new -i "~/secret.pem" -r dist/** ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:backend-cd
+
+      - name: SSH into EC2 instance and restarting server
+        run: |
+          ssh -i "~/secret.pem" ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+          pm2 restart backend
+          '
