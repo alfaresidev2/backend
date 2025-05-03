@@ -2,7 +2,10 @@ import nodemailer from "nodemailer";
 
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || "gmail",
+  // service: process.env.EMAIL_SERVICE || "gmail",
+  host: process.env.EMAIL_HOST, // e.g., 'your-email-address@gmail.com'
+  port: 587, // or 465 for SSL
+  secure: false, // true for port 465, false for 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
@@ -35,7 +38,7 @@ export const sendEmail = async (options: EmailOptions) => {
   try {
     // Send the email
     return await emailTransporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "Influencer App"}" <${process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || "Influencer App"}" <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: options.to,
       cc: options.cc,
       bcc: options.bcc,
