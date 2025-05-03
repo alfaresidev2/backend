@@ -41,11 +41,12 @@ export const createInfluencer = async (req: Request, res: Response) => {
 export const updateInfluencer = async (req: Request, res: Response) => {
   try {
     const dataToUpdate = { ...req.body };
+    const userId = req.params.id;
 
     delete dataToUpdate?.password;
     delete dataToUpdate?._id;
 
-    const userData = await Influencer.findById(dataToUpdate?._id);
+    const userData = await Influencer.findById(userId);
 
     if (!userData) return res.status(404).json({ message: "User not found" });
 
