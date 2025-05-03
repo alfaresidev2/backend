@@ -22,6 +22,10 @@ const InfluencerSchema = new Schema(
       type: String,
       minlength: 6,
     },
+    gender: {
+      type: String,
+      enum: ["male", "female"],
+    },
     phoneNumber: {
       type: String,
       trim: true,
