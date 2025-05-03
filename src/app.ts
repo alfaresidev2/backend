@@ -11,6 +11,8 @@ const port = process.env.PORT || 3001;
 app.use("/api/admin", adminRoutes);
 app.use("/api/app", userRouters);
 
+app.use("/", (_, res) => res.send("API is running ✅"));
+
 // Connect to database and start server
 connectDB().then(() => {
   app.listen(port, () => {
