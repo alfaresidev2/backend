@@ -2,10 +2,10 @@ import nodemailer from "nodemailer";
 
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
-  // service: process.env.EMAIL_SERVICE || "gmail",
-  host: process.env.EMAIL_HOST, // e.g., 'your-email-address@gmail.com'
-  port: 587, // or 465 for SSL
-  secure: false, // true for port 465, false for 587
+  service: process.env.EMAIL_SERVICE || "gmail",
+  // host: process.env.EMAIL_HOST, // e.g., 'your-email-address@gmail.com'
+  // port: 587, // or 465 for SSL
+  // secure: false, // true for port 465, false for 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
