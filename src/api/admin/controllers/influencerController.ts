@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Influencer } from "../../../models/Influencer";
 import bcrypt from "bcryptjs";
 import { sendCredentialsEmail } from "../../../utils/emailService";
+import mongoose from "mongoose";
 
 // Get all influencers
 export const getAllInfluencers = async (req: Request, res: Response) => {
@@ -46,7 +47,7 @@ export const updateInfluencer = async (req: Request, res: Response) => {
     delete dataToUpdate?.password;
     delete dataToUpdate?._id;
 
-    const userData = await Influencer.findById(userId);
+    const userData = await Influencer.findOne({ _id: new mongoose.Types.ObjectId(userId) });
 
     if (!userData) return res.status(404).json({ message: "User not found" });
 
